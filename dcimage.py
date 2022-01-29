@@ -35,6 +35,8 @@
 # ---------------------------------------------------------------------------------------
 
 from PIL import Image
+import numpy as np
+from stegano import lsb
 
 def getImageDimensions(image_name):
     with Image.open(image_name) as img:
@@ -49,47 +51,57 @@ def stegoEncode(secret, cover, output):
     cover_image.save(output) 
     
     output_image = Image.open(cover)
-    output_rgb = output_image.convert("RGB")
-    width, height = output_rgb.size
+    # output_rgb = output_image.convert("RGB")
+    width, height = output_image.size
 
-    pixels = output_rgb.load()
+    # pixels = output_rgb.load()
+    
+    data = np.asarray(output_image)
 
     #Embedding main payload at the beginning of the file
     # print("Manipulating cover image to store encrypted data...")
     i = 0
     finished = False
-    while i < len(secret):
-        for y in range(height):
-            for x in range(width):
-                r,g,b = pixels[x,y]
+    print(output, "start")
+    for y in range(height):
+        for x in range(width):
+            r, g, b = data[y, x]
+            # print("regular(", x, y, ")" , r, g, b)
+            # r2,g2,b2 = data[y,x]
+            # print("numpy(", x, y,")", r2,g2,b2)
+            
+            # print(data)
 
-                #Red pixel
-                if i < len(secret):
-                    # r_bit = bin(r)
-                    # r_new_final_bit = secret[i]
-                    new_bit_red_pixel = int(bin(r)[:-1]+str(secret[i]), 2)
-                    i += 1
-                #Green pixel
-                if i < len(secret):
-                    # g_bit = bin(g)
-                    # g_new_final_bit = secret[i]
-                    new_bit_green_pixel = int(bin(g)[:-1]+str(secret[i]), 2)
-                    i += 1
-                #Blue pixel
-                if i < len(secret):
-                    # b_bit = bin(b)
-                    # b_new_final_bit = secret[i]
-                    new_bit_blue_pixel = int(bin(b)[:-1]+str(secret[i]), 2)
-                    i += 1
+            #Red pixel
+            if i < len(secret):
+                # r_bit = bin(r)
+                # r_new_final_bit = secret[i]
+                new_bit_red_pixel = int(bin(r)[:-1]+str(secret[i]), 2)
+                i += 1
+            #Green pixel
+            if i < len(secret):
+                # g_bit = bin(g)
+                # g_new_final_bit = secret[i]
+                new_bit_green_pixel = int(bin(g)[:-1]+str(secret[i]), 2)
+                i += 1
+            #Blue pixel
+            if i < len(secret):
+                # b_bit = bin(b)
+                # b_new_final_bit = secret[i]
+                new_bit_blue_pixel = int(bin(b)[:-1]+str(secret[i]), 2)
+                i += 1
 
-                if i <= len(secret):
-                    output_rgb.putpixel((x, y), (new_bit_red_pixel, new_bit_green_pixel, new_bit_blue_pixel))
-                    if i >= len(secret):
-                        i += 1
-                        finished = True
-                        break
-            if finished:
-                break
+            if i <= len(secret):
+                # output_rgb.putpixel((x, y), (new_bit_red_pixel, new_bit_green_pixel, new_bit_blue_pixel))
+                data[y, x] = (new_bit_red_pixel, new_bit_green_pixel, new_bit_blue_pixel)
+                if i >= len(secret):
+                    i += 1
+                    finished = True
+                    break
+        if finished:
+            break
+        
+    print(output, "end")
 
     bin_payload_length = bin(len(secret))[2:]
     # print("Embedding payload length at the end of the file")
@@ -99,7 +111,7 @@ def stegoEncode(secret, cover, output):
     while i >= 0:
         for x in range(width):
             if i >= 0:
-                r,g,b = pixels[(width - x) - 1, height-1]
+                r, g, b = data[height-1, (width - x) - 1]
             #Red pixel
             if i >= 0:
                 r_bit = bin(r)
@@ -131,7 +143,8 @@ def stegoEncode(secret, cover, output):
                 b_new_final_bit = 0
                 new_bit_blue_pixel = int(b_bit[:-1]+str(b_new_final_bit), 2)
             if i >= -3:
-                output_rgb.putpixel(((width - x) - 1, height-1), (new_bit_red_pixel, new_bit_green_pixel, new_bit_blue_pixel))
+                data[height-1, (width - x) - 1] = (new_bit_red_pixel, new_bit_green_pixel, new_bit_blue_pixel)
+                # output_rgb.putpixel(((width - x) - 1, height-1), (new_bit_red_pixel, new_bit_green_pixel, new_bit_blue_pixel))
                 final_x = (width - x) - 1
                 if i < 0: 
                     i = -10
@@ -154,8 +167,10 @@ def stegoEncode(secret, cover, output):
         b_new_final_bit = 0
         new_bit_blue_pixel = int(b_bit[:-1]+str(b_new_final_bit), 2)
         j += 1
-        output_rgb.putpixel((x, height-1), (new_bit_red_pixel, new_bit_green_pixel, new_bit_blue_pixel))
+        data[height-1, x] = (new_bit_red_pixel, new_bit_green_pixel, new_bit_blue_pixel)   
+        # output_rgb.putpixel((x, height-1), (new_bit_red_pixel, new_bit_green_pixel, new_bit_blue_pixel))
         x -= 1
+    output_rgb = Image.fromarray(data, 'RGB')
     output_rgb.save(output)
     # print("Encoding complete.")
     print("Saved output image:", output)

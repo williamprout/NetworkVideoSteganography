@@ -5,7 +5,7 @@ import sys
 from datetime import datetime
 from dcimage import getImageDimensions, stegoEncode, stegoDecode
 from dcutils import encryptSecretImage, decryptSecretImage
-
+from dnacryptograpy import binaryToDNA
 from multiprocessing import Pool
 
 def videoToImages(videoFile, type):
@@ -129,12 +129,14 @@ def main():
     mode = sys.argv[1]
     
     if (mode == "encode"):
+        start = datetime.now()
         setupTempDir()
         cover_fps = videoToImages("cover_test.avi", "cover")
         videoToImages("secret_test.avi", "secret")
         stegoEncodeFrames()
         imagesToVideo("output.avi", "encoded", cover_fps)
         cleanupTempFiles()
+        print("Encoding run took: " + str(datetime.now() - start))
     
     if (mode == "decode"):
         setupTempDir()
@@ -145,6 +147,19 @@ def main():
         
     if (mode == "clean"):
         cleanupTempFiles()
+        
+    if (mode == "dnatest"):
+        with open("encrypttest.bmp", "rb") as image:
+            #Read image data in binary
+            # print("Reading secret image...")
+            secret_image_bytes = bytes(image.read())
+            image.close()
+            secret_image_name_bytes = str.encode("encrypttest.bmp")
+            payload = secret_image_name_bytes + secret_image_bytes
+            
+        final_payload = payload + b"\\end\\"
+        final_final_payload = bin(int.from_bytes(final_payload, byteorder=sys.byteorder))[2:]
+        print(binaryToDNA(final_final_payload)[0:50])
     
 if __name__ == "__main__":
     main()
