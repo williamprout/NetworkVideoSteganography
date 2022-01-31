@@ -1,3 +1,4 @@
+from pydoc import plain
 import cv2
 import os
 import shutil
@@ -5,7 +6,7 @@ import sys
 from datetime import datetime
 from dcimage import getImageDimensions, stegoEncode, stegoDecode
 from dcutils import encryptSecretImage, decryptSecretImage
-from dnacryptograpy import binaryToDNA
+from dnacryptograpy import DNAencrypt, DNAdecrypt
 from multiprocessing import Pool
 
 def videoToImages(videoFile, type):
@@ -159,7 +160,24 @@ def main():
             
         final_payload = payload + b"\\end\\"
         final_final_payload = bin(int.from_bytes(final_payload, byteorder=sys.byteorder))[2:]
-        print(binaryToDNA(final_final_payload)[0:50])
+        print(final_final_payload[0:50])
+        cipher = DNAencrypt(1, final_final_payload)
+        # print(cipher[0:50])
+        decrypted = DNAdecrypt(1, cipher)
+        print(decrypted[0:50])
+        print(final_final_payload[-50:])
+        print(decrypted[-50:])
+        
+        print(len(final_final_payload))
+        print(len(cipher))
+        print(len(decrypted))
+        if final_final_payload == decrypted:
+            print("SUCCESSFUL")
+        
+        # filename = (decrypted[0:(decrypted.rfind(bytes('.bmp', 'utf-8')) + 4)]).decode('utf-8')
+        # plaintext = decrypted[(decrypted.rfind(bytes('.bmp', 'utf-8')) + 4):]
+        # print(filename)
+        # print(plaintext)
     
 if __name__ == "__main__":
     main()

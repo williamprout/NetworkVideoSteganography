@@ -1,4 +1,5 @@
 from distutils.log import error
+from msilib.schema import Binary
 from operator import index
 from collections import deque
 
@@ -21,12 +22,18 @@ def indexTable(key):
         return table
     else:
         return defaultTable
-def DNAtoEncodedBinary():
-    table = indexTable(1)
-    print(table)
+
+def DNAtoEncodedBinary(dna, table):
+    i = 0
+    output = ""
+    while i < len(dna):
+        dnasequence = dna[i:i+4]
+        if len(dnasequence) == 4:
+            output += '{0:08b}'.format(table.index(dnasequence))
+        i += 4
+    return output
 
 def binaryToDNA(binary):
-    DNAtoEncodedBinary()
     i = 0
     output = ""
     while i < len(binary):
@@ -41,3 +48,51 @@ def binaryToDNA(binary):
             output += "C"
         i += 2
     return output
+
+def DNAencrypt(key, data):
+    table = indexTable(key)
+    overflow = ""
+    if len(data)%8 != 0:
+        overflow = data[-(len(data)%8):] 
+        data = data[:(len(data)-(len(data)%8))] 
+    dna = binaryToDNA(data)
+    encrypted = DNAtoEncodedBinary(dna, table)
+    encrypted = encrypted + overflow
+    return encrypted
+
+
+def EncodedBinarytoDNA(cipher, table):
+    i = 0
+    output = ""
+    while i < len(cipher):
+        binarysequence = cipher[i:i+8]
+        index = int(binarysequence, 2)
+        output += table[index]
+        i += 8
+    return output
+
+def dnaToBinary(binary):
+    i = 0
+    output = ""
+    while i < len(binary):
+        letter = binary[i]
+        if letter == "A":
+            output += "00"
+        elif letter == "T":
+            output += "01"
+        elif letter == "G":
+            output += "10"
+        elif letter == "C":
+            output += "11"
+        i += 1
+    return output
+
+def DNAdecrypt(key, cipher):
+    table = indexTable(key)
+    overflow = ""
+    if len(cipher)%8 != 0:
+        overflow = cipher[-(len(cipher)%8):]
+        cipher = cipher[:(len(cipher)-(len(cipher)%8))]
+    dna = EncodedBinarytoDNA(cipher, table)
+    decrypted = dnaToBinary(dna) + overflow
+    return decrypted
