@@ -2,6 +2,8 @@ from distutils.log import error
 from msilib.schema import Binary
 from operator import index
 from collections import deque
+from datetime import datetime
+
 
 def indexTable(key):
     key = key - 1
@@ -23,30 +25,38 @@ def indexTable(key):
     else:
         return defaultTable
 
-def DNAtoEncodedBinary(dna, table):
-    i = 0
-    output = ""
-    while i < len(dna):
-        dnasequence = dna[i:i+4]
-        if len(dnasequence) == 4:
-            output += '{0:08b}'.format(table.index(dnasequence))
-        i += 4
-    return output
+# def DNAtoEncodedBinary(dna, table):
+#     i = 0
+#     output = ""
+#     while i < len(dna):
+#         dnasequence = dna[i:i+4]
+#         if len(dnasequence) == 4:
+#             output += '{0:08b}'.format(table.index(dnasequence))
+#         i += 4
+#     return output
 
-def binaryToDNA(binary):
+def encryption(binary, table):
     i = 0
+    j = 0
+    dnaoutput = ""
     output = ""
     while i < len(binary):
         bitpair = binary[i:i+2]
         if bitpair == "00":
-            output += "A"
+            dnaoutput += "A"
         elif bitpair == "01":
-            output += "T"
+            dnaoutput += "T"
         elif bitpair == "10":
-            output += "G"
+            dnaoutput += "G"
         elif bitpair == "11":
-            output += "C"
+            dnaoutput += "C"
+        j += 1
         i += 2
+        if j == 4:
+            output += '{0:08b}'.format(table.index(dnaoutput))
+            j = 0
+            dnaoutput = ""
+    # print(i)
     return output
 
 def DNAencrypt(key, data):
@@ -55,9 +65,13 @@ def DNAencrypt(key, data):
     if len(data)%8 != 0:
         overflow = data[-(len(data)%8):] 
         data = data[:(len(data)-(len(data)%8))] 
-    dna = binaryToDNA(data)
-    encrypted = DNAtoEncodedBinary(dna, table)
+    start = datetime.now()
+    encrypted = encryption(data, table)
+    print("done binary to DNA "  + str(datetime.now() - start))
+    # start2 = datetime.now()
+    # encrypted = DNAtoEncodedBinary(dna, table)
     encrypted = encrypted + overflow
+    # print("done dna to binary " + str(datetime.now() - start2))
     return encrypted
 
 
@@ -88,11 +102,16 @@ def dnaToBinary(binary):
     return output
 
 def DNAdecrypt(key, cipher):
+    
     table = indexTable(key)
     overflow = ""
     if len(cipher)%8 != 0:
         overflow = cipher[-(len(cipher)%8):]
         cipher = cipher[:(len(cipher)-(len(cipher)%8))]
+    start = datetime.now()
     dna = EncodedBinarytoDNA(cipher, table)
+    print("done binary to DNA "  + str(datetime.now() - start))
+    start2 = datetime.now()
     decrypted = dnaToBinary(dna) + overflow
+    print("done dna to binary " + str(datetime.now() - start2))
     return decrypted

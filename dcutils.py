@@ -34,8 +34,9 @@
 
 import sys
 from Crypto.Cipher import AES
+from dnacryptograpy import DNAencrypt, DNAdecrypt
 
-def encryptSecretImage(secret_image_name):
+def encryptSecretImage(secret_image_name, key):
     with open(secret_image_name, "rb") as image:
             #Read image data in binary
             # print("Reading secret image...")
@@ -52,16 +53,24 @@ def encryptSecretImage(secret_image_name):
     # print("Encrypting secret image and original filename...")
     # ciphertext, tag = cipher.encrypt_and_digest(payload)
 
-    final_payload = payload + b"\\end\\"
-    return(bin(int.from_bytes(final_payload, byteorder=sys.byteorder))[2:])
+    final_payload = payload
+    raw_data = bin(int.from_bytes(final_payload, byteorder=sys.byteorder))[2:]
+    cipher = DNAencrypt(key, raw_data)
+    return(cipher)
 
 
-def decryptSecretImage(cipher):
+def decryptSecretImage(cipher, key):
     # password = bytes(password, 'utf-8')
     # password = password + bytes(16 - len(password))
     # key = password
 
-    plaintext = cipher
+    plaintext = DNAdecrypt(key, cipher)
+    
+    def bitstring_to_bytes(s):
+        return int(s, 2).to_bytes((len(s) + 7) // 8, byteorder='little')
+
+    plaintext = bitstring_to_bytes(str(plaintext))
+    
     # nonce = (plaintext[0:(plaintext.rfind(bytes('\\nonce\\', 'utf-8')))])
     # plaintext = plaintext[(plaintext.rfind(bytes('\\nonce\\', 'utf-8')) + 7):]
 

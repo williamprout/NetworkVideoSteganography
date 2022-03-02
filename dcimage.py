@@ -257,9 +257,9 @@ def stegoDecode(stego_image_name):
                     binary_string = binary_string + str(b_final_bit)
                     i += 1
 
-    def bitstring_to_bytes(s):
-        return int(s, 2).to_bytes((len(s) + 7) // 8, byteorder='little')
+    # def bitstring_to_bytes(s):
+    #     return int(s, 2).to_bytes((len(s) + 7) // 8, byteorder='little')
 
-    cipher = bitstring_to_bytes(str(binary_string))
+    # cipher = bitstring_to_bytes(str(binary_string))
     # print("Decoding complete.")
-    return(cipher)
+    return(binary_string)
