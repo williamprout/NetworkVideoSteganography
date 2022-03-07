@@ -10,25 +10,30 @@ from dnacryptograpy import DNAencrypt, DNAdecrypt
 from multiprocessing import Pool
 from networking import sendFile, receiveFile
 from functools import partial
+import tqdm
 
 def videoToImages(videoFile, type):
-    start = datetime.now()
-    vidcap = cv2.VideoCapture(videoFile)
-    fps = vidcap.get(cv2.CAP_PROP_FPS)
-    success, image = vidcap.read()
-    count = 0
-    # shutil.rmtree("temp/" + type)
-    os.mkdir("temp/"+ type)
-
-    while success:
-        countString = str(count).zfill(10)
-        # save frame as JPEG file
-        cv2.imwrite("temp/" + type + "/%s.bmp" % countString, image)
+    if videoFile.endswith(".avi"):
+        start = datetime.now()
+        vidcap = cv2.VideoCapture(videoFile)
+        fps = vidcap.get(cv2.CAP_PROP_FPS)
         success, image = vidcap.read()
-        # print('Read a new frame: ', success)
-        count += 1
-    print("Video-to-Image conversion took: " + str(datetime.now() - start))
-    return fps
+        count = 0
+        # shutil.rmtree("temp/" + type)
+        os.mkdir("temp/"+ type)
+
+        while success:
+            countString = str(count).zfill(10)
+            # save frame as JPEG file
+            cv2.imwrite("temp/" + type + "/%s.bmp" % countString, image)
+            success, image = vidcap.read()
+            # print('Read a new frame: ', success)
+            count += 1
+        # print("Video-to-Image conversion took: " + str(datetime.now() - start))
+        return fps
+    else:
+        cleanupTempFiles()
+        sys.exit("Incompatible video type. Must be .avi format.")
     
 def imagesToVideo(video_name, type, fps):
     fourcc = cv2.VideoWriter_fourcc(*'FFV1')
@@ -67,7 +72,10 @@ def stegoEncodeFrames(key):
     secretFrames = [img for img in os.listdir('temp/secret') if img.endswith(".bmp")]
     coverFrames = [img for img in os.listdir('temp/cover') if img.endswith(".bmp")]
     
-    #TODO ensure that they are more cover frames than secret frames
+    if len(secretFrames) > len(coverFrames):
+        cleanupTempFiles()
+        sys.exit("Secret video is longer than cover video.")
+    
     
     try:
         secret_width, secret_height = getImageDimensions("temp/secret/" + secretFrames[0])
@@ -80,12 +88,13 @@ def stegoEncodeFrames(key):
         cover_width, cover_height = getImageDimensions("temp/cover/" + coverFrames[0])
         cover_pixel_count = cover_width * cover_height
     except:
-        print("First cover fmage could not be read.")
+        print("First cover frame could not be read.")
         print(coverFrames[0])
 
     if ((cover_pixel_count / secret_pixel_count) > 8.2):
-        print("Frame sizes compatible, cover frame is", str(
-            cover_pixel_count / secret_pixel_count), 'times larger than the secret frame.')
+        # print("Frame sizes compatible, cover frame is", str(
+            # cover_pixel_count / secret_pixel_count), 'times larger than the secret frame.')
+        print("File compatability check complete!")
         
         os.mkdir("temp/encoded")
 
@@ -95,14 +104,20 @@ def stegoEncodeFrames(key):
         # secretFrameString = str(secretFrame)
         # print(secretFrameString)
         
+        print("Frame Encoding Progress:")
+        
         pool = Pool(processes=10)
-        pool.map(partial(encodeFrame, key=key), secretFrames)
+        for _ in tqdm.tqdm(pool.imap(partial(encodeFrame, key=key), secretFrames), total=len(secretFrames)):
+            pass
             
         #     threads.append(threading.Thread(target=encodeFrame(secretFrameString)))
         #     threads[-1].start()
             
         # for t in threads:
         #     t.join()
+    else:
+        cleanupTempFiles()
+        sys.exit("Frame sizes incompatable. Cover video must be 8 times the resolution of the secret video.")
         
         
 def decodeFrame(encodedFrame, key):
@@ -117,8 +132,11 @@ def stegoDecodeFrames(key):
     encodedFrames = [img for img in os.listdir('temp/encoded') if img.endswith(".bmp")]
     os.mkdir("temp/secret")
     
+    print("Frame Decoding Progress:")
+    
     pool = Pool(processes=10)
-    pool.map(partial(decodeFrame, key=key), encodedFrames)
+    for _ in tqdm.tqdm(pool.imap(partial(decodeFrame, key=key), encodedFrames), total=len(encodedFrames)):
+        pass
 
 
 def setupTempDir():
@@ -132,23 +150,31 @@ def main():
     mode = sys.argv[1]
     
     if (mode == "encode"):
-        # global key 
-        key = int(sys.argv[2])
+        #py main.py cover_test.avi secret_test.avi 1 output.avi
+        cover = sys.argv[2]
+        secret = sys.argv[3]
+        key = int(sys.argv[4])
+        output = sys.argv[5]
+        
         start = datetime.now()
         setupTempDir()
-        cover_fps = videoToImages("cover_test.avi", "cover")
-        videoToImages("secret_test.avi", "secret")
+        cover_fps = videoToImages(cover, "cover")
+        videoToImages(secret, "secret")
         stegoEncodeFrames(key)
-        imagesToVideo("output.avi", "encoded", cover_fps)
+        imagesToVideo(output, "encoded", cover_fps)
         cleanupTempFiles()
         print("Encoding run took: " + str(datetime.now() - start))
     
     if (mode == "decode"):
-        key = int(sys.argv[2])
+        #py main.py output.avi 1 secret_output.avi
+        encoded_file = sys.argv[2]
+        key = int(sys.argv[3])
+        output = sys.argv[4]
+        
         setupTempDir()
-        encoded_fps = videoToImages("output.avi", "encoded")
+        encoded_fps = videoToImages(encoded_file, "encoded")
         stegoDecodeFrames(key)
-        imagesToVideo("secret_output.avi", "secret", encoded_fps)
+        imagesToVideo(output, "secret", encoded_fps)
         cleanupTempFiles()
         
     if (mode == "clean"):

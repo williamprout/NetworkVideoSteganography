@@ -62,7 +62,7 @@ def stegoEncode(secret, cover, output):
     # print("Manipulating cover image to store encrypted data...")
     i = 0
     finished = False
-    print(output, "start")
+    # print(output, "start")
     for y in range(height):
         for x in range(width):
             r, g, b = data[y, x]
@@ -101,7 +101,7 @@ def stegoEncode(secret, cover, output):
         if finished:
             break
         
-    print(output, "end")
+    # print(output, "end")
 
     bin_payload_length = bin(len(secret))[2:]
     # print("Embedding payload length at the end of the file")
@@ -173,7 +173,7 @@ def stegoEncode(secret, cover, output):
     output_rgb = Image.fromarray(data, 'RGB')
     output_rgb.save(output)
     # print("Encoding complete.")
-    print("Saved output image:", output)
+    # print("Saved output image:", output)
 
 
 def stegoDecode(stego_image_name):

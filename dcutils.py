@@ -87,5 +87,5 @@ def decryptSecretImage(cipher, key):
 
     with open(filename, "wb") as write_image:
         write_image.write(plaintext)
-        print("Saved decrypted image:", filename)
+        # print("Saved decrypted image:", filename)
         write_image.close()

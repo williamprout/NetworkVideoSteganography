@@ -19,7 +19,6 @@ def indexTable(key):
         return error("Key is too large (> 256)") 
     if key > 0:
         table = deque(defaultTable)
-        print("rotating", key)
         table.rotate(-key)
         return table
     else:
@@ -56,7 +55,6 @@ def encryption(binary, table):
             output += '{0:08b}'.format(table.index(dnaoutput))
             j = 0
             dnaoutput = ""
-    # print(i)
     return output
 
 def DNAencrypt(key, data):
@@ -67,11 +65,8 @@ def DNAencrypt(key, data):
         data = data[:(len(data)-(len(data)%8))] 
     start = datetime.now()
     encrypted = encryption(data, table)
-    print("done binary to DNA "  + str(datetime.now() - start))
-    # start2 = datetime.now()
-    # encrypted = DNAtoEncodedBinary(dna, table)
+    # print("done binary to DNA "  + str(datetime.now() - start))
     encrypted = encrypted + overflow
-    # print("done dna to binary " + str(datetime.now() - start2))
     return encrypted
 
 
@@ -110,8 +105,8 @@ def DNAdecrypt(key, cipher):
         cipher = cipher[:(len(cipher)-(len(cipher)%8))]
     start = datetime.now()
     dna = EncodedBinarytoDNA(cipher, table)
-    print("done binary to DNA "  + str(datetime.now() - start))
+    # print("done binary to DNA "  + str(datetime.now() - start))
     start2 = datetime.now()
     decrypted = dnaToBinary(dna) + overflow
-    print("done dna to binary " + str(datetime.now() - start2))
+    # print("done dna to binary " + str(datetime.now() - start2))
     return decrypted
