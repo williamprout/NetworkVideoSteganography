@@ -1,14 +1,13 @@
-from pydoc import plain
 import cv2
 import os
 import shutil
 import sys
 from datetime import datetime
-from dcimage import getImageDimensions, stegoEncode, stegoDecode
-from dcutils import encryptSecretImage, decryptSecretImage
+from framesteganography import getImageDimensions, stegoEncode, stegoDecode
+from framecryptography import encryptSecretImage, decryptSecretImage
 from dnacryptograpy import DNAencrypt, DNAdecrypt
 from multiprocessing import Pool
-from networking import sendFile, receiveFile
+import networking
 from functools import partial
 import tqdm
 
@@ -63,19 +62,10 @@ def encodeFrame(secretFrame, key):
     stegoEncode(cipher, "temp/cover/" + secretFrame, "temp/encoded/%s" % secretFrame)
     # print(secretFrame)
 
-    
-
-def stegoEncodeFrames(key):
-    
-    # shutil.rmtree("temp/encoded")
-    
-    secretFrames = [img for img in os.listdir('temp/secret') if img.endswith(".bmp")]
-    coverFrames = [img for img in os.listdir('temp/cover') if img.endswith(".bmp")]
-    
+def framesCompatabilityCheck(secretFrames, coverFrames):
     if len(secretFrames) > len(coverFrames):
         cleanupTempFiles()
         sys.exit("Secret video is longer than cover video.")
-    
     
     try:
         secret_width, secret_height = getImageDimensions("temp/secret/" + secretFrames[0])
@@ -90,31 +80,46 @@ def stegoEncodeFrames(key):
     except:
         print("First cover frame could not be read.")
         print(coverFrames[0])
+        
+    return secret_pixel_count, cover_pixel_count
+
+def stegoEncodeFrames(key):
+    
+    # shutil.rmtree("temp/encoded")
+    
+    secretFrames = [img for img in os.listdir('temp/secret') if img.endswith(".bmp")]
+    coverFrames = [img for img in os.listdir('temp/cover') if img.endswith(".bmp")]
+    
+    secret_pixel_count, cover_pixel_count = framesCompatabilityCheck(secretFrames, coverFrames)
 
     if ((cover_pixel_count / secret_pixel_count) > 8.2):
-        # print("Frame sizes compatible, cover frame is", str(
-            # cover_pixel_count / secret_pixel_count), 'times larger than the secret frame.')
-        print("File compatability check complete!")
-        
-        os.mkdir("temp/encoded")
+        if (len(secretFrames) <= len(coverFrames)):
+            # print("Frame sizes compatible, cover frame is", str(
+                # cover_pixel_count / secret_pixel_count), 'times larger than the secret frame.')
+            print("File compatability check complete!")
+            
+            os.mkdir("temp/encoded")
 
-        # frameNumber = 0
-        threads = []
-        # for secretFrame in secretFrames:
-        # secretFrameString = str(secretFrame)
-        # print(secretFrameString)
-        
-        print("Frame Encoding Progress:")
-        
-        pool = Pool(processes=10)
-        for _ in tqdm.tqdm(pool.imap(partial(encodeFrame, key=key), secretFrames), total=len(secretFrames)):
-            pass
+            # frameNumber = 0
+            threads = []
+            # for secretFrame in secretFrames:
+            # secretFrameString = str(secretFrame)
+            # print(secretFrameString)
             
-        #     threads.append(threading.Thread(target=encodeFrame(secretFrameString)))
-        #     threads[-1].start()
+            print("Frame Encoding Progress:")
             
-        # for t in threads:
-        #     t.join()
+            pool = Pool(processes=10)
+            for _ in tqdm.tqdm(pool.imap(partial(encodeFrame, key=key), secretFrames), total=len(secretFrames)):
+                pass
+                
+            #     threads.append(threading.Thread(target=encodeFrame(secretFrameString)))
+            #     threads[-1].start()
+                
+            # for t in threads:
+            #     t.join()
+        else:
+            cleanupTempFiles()
+            sys.exit("Video lengths incompatable. Cover video must be longer than the secret video.")
     else:
         cleanupTempFiles()
         sys.exit("Frame sizes incompatable. Cover video must be 8 times the resolution of the secret video.")
@@ -150,7 +155,7 @@ def main():
     mode = sys.argv[1]
     
     if (mode == "encode"):
-        #py main.py cover_test.avi secret_test.avi 1 output.avi
+        #py main.py encode cover_test.avi secret_test.avi 1 output.avi
         cover = sys.argv[2]
         secret = sys.argv[3]
         key = int(sys.argv[4])
@@ -166,7 +171,7 @@ def main():
         print("Encoding run took: " + str(datetime.now() - start))
     
     if (mode == "decode"):
-        #py main.py output.avi 1 secret_output.avi
+        #py main.py decode output.avi 1 secret_output.avi
         encoded_file = sys.argv[2]
         key = int(sys.argv[3])
         output = sys.argv[4]
@@ -217,13 +222,38 @@ def main():
         
     if (mode == "receive"):
         port = sys.argv[2]
-        receiveFile(port)
+        networking.receiveFile(port)
 
     if (mode == "send"):
         file = sys.argv[2]
         address = sys.argv[3]
         port = sys.argv[4]
-        sendFile(file, address, port)
+        networking.sendFile(file, address, port)
+        
+    if (mode == "transmit_stream"):
+        secret = sys.argv[2]
+        cover = sys.argv[3]
+        address = sys.argv[4]
+        port = sys.argv[5]
+        key = int(sys.argv[6])
+        
+        setupTempDir()
+        cover_fps = videoToImages(cover, "cover")
+        videoToImages(secret, "secret")
+        networking.streamTransmit(address, port, key)
+        
+        
+        
+        
+        
+        cleanupTempFiles()
+        
+        
+    if (mode == "receive_stream"):
+        port = sys.argv[2]
+        key = int(sys.argv[3])
+        networking.streamReceive(port, key)
+
         
 if __name__ == "__main__":
     main()

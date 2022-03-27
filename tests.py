@@ -4,50 +4,51 @@ import sys
 import shutil
 from dnacryptograpy import DNAencrypt, DNAdecrypt
 from main import setupTempDir, cleanupTempFiles, videoToImages, imagesToVideo, stegoEncodeFrames, stegoDecodeFrames
+import main
 import filecmp
 
 
 class Testing(unittest.TestCase):
-    # def test_cryptography(self):
-    #     print("\nTEST 1 - Cryptography")
-    #     image_path = "test_files/secret_test.bmp"
-    #     key = 1
+    def test_cryptography(self):
+        print("\nTEST 1 - Cryptography")
+        image_path = "test_files/secret_test.bmp"
+        key = 1
         
-    #     with open(image_path, "rb") as image:
-    #         secret_image_bytes = bytes(image.read())
-    #         image.close()
-    #         secret_image_name_bytes = str.encode(image_path)
-    #         payload = secret_image_name_bytes + secret_image_bytes
+        with open(image_path, "rb") as image:
+            secret_image_bytes = bytes(image.read())
+            image.close()
+            secret_image_name_bytes = str.encode(image_path)
+            payload = secret_image_name_bytes + secret_image_bytes
             
-    #     final_payload = payload
-    #     raw_data = bin(int.from_bytes(final_payload, byteorder=sys.byteorder))[2:]
-    #     cipher = DNAencrypt(key, raw_data)
+        final_payload = payload
+        raw_data = bin(int.from_bytes(final_payload, byteorder=sys.byteorder))[2:]
+        cipher = DNAencrypt(key, raw_data)
         
-    #     plaintext = DNAdecrypt(key, cipher)
+        plaintext = DNAdecrypt(key, cipher)
         
         
-    #     self.assertEqual(raw_data, plaintext)
+        self.assertEqual(raw_data, plaintext)
 
-    # def test_cryptography_mismatched_keys(self):
-    #     print("\nTEST 2 - Cryptography (Mismatched Keys)")
-    #     image_path = "test_files/secret_test.bmp"
-    #     key1 = 1
-    #     key2 = 2
+    def test_cryptography_mismatched_keys(self):
+        print("\nTEST 2 - Cryptography (Mismatched Keys)")
+        image_path = "test_files/secret_test.bmp"
+        key1 = 1
+        key2 = 2
         
-    #     with open(image_path, "rb") as image:
-    #         secret_image_bytes = bytes(image.read())
-    #         image.close()
-    #         secret_image_name_bytes = str.encode(image_path)
-    #         payload = secret_image_name_bytes + secret_image_bytes
+        with open(image_path, "rb") as image:
+            secret_image_bytes = bytes(image.read())
+            image.close()
+            secret_image_name_bytes = str.encode(image_path)
+            payload = secret_image_name_bytes + secret_image_bytes
             
-    #     final_payload = payload
-    #     raw_data = bin(int.from_bytes(final_payload, byteorder=sys.byteorder))[2:]
-    #     cipher = DNAencrypt(key1, raw_data)
+        final_payload = payload
+        raw_data = bin(int.from_bytes(final_payload, byteorder=sys.byteorder))[2:]
+        cipher = DNAencrypt(key1, raw_data)
         
-    #     plaintext = DNAdecrypt(key2, cipher)
+        plaintext = DNAdecrypt(key2, cipher)
         
         
-    #     self.assertNotEqual(raw_data, plaintext)
+        self.assertNotEqual(raw_data, plaintext)
         
     def test_steganography(self):
         print("\nTEST 3 - Steganography")
@@ -80,45 +81,45 @@ class Testing(unittest.TestCase):
         shutil.rmtree("test_temp/")
 
 
-    # def test_file_extension_verification(self):
-    #     print("\nTEST 4 - File Management (Incompatible File Extension)")
-    #     incompatible_file = "test_files/secret_test.mp4"        
-    #     setupTempDir()
+    def test_file_extension_verification(self):
+        print("\nTEST 4 - File Management (Incompatible File Extension)")
+        incompatible_file = "test_files/secret_test.mp4"        
+        setupTempDir()
         
-    #     with self.assertRaises(SystemExit) as exit:
-    #         videoToImages(incompatible_file, "cover")
+        with self.assertRaises(SystemExit) as exit:
+            videoToImages(incompatible_file, "cover")
         
-    #     print(self.assertEqual(exit.exception.args[0], "Incompatible video type. Must be .avi format."))
+        print(self.assertEqual(exit.exception.args[0], "Incompatible video type. Must be .avi format."))
             
-    # def test_video_length_verification(self):
-    #     print("\nTEST 5 - File Management (Incompatible Video Lengths)")       
-    #     cover = "test_files/cover_test.avi"
-    #     secret = "test_files/secret_long.avi"
-    #     key = 1
+    def test_video_length_verification(self):
+        print("\nTEST 5 - File Management (Incompatible Video Lengths)")       
+        cover = "test_files/cover_test.avi"
+        secret = "test_files/secret_long.avi"
+        key = 1
         
-    #     setupTempDir()
-    #     cover_fps = videoToImages(cover, "cover")
-    #     videoToImages(secret, "secret")
+        setupTempDir()
+        cover_fps = videoToImages(cover, "cover")
+        videoToImages(secret, "secret")
         
-    #     with self.assertRaises(SystemExit) as exit:
-    #         stegoEncodeFrames(key)
+        with self.assertRaises(SystemExit) as exit:
+            stegoEncodeFrames(key)
         
-    #     print(self.assertEqual(exit.exception.args[0], "Secret video is longer than cover video."))
+        print(self.assertEqual(exit.exception.args[0], "Secret video is longer than cover video."))
         
-    # def test_frame_size_verification(self):
-    #     print("\nTEST 6 - File Management (Incompatible Frame Sizes)")       
-    #     secret = "test_files/cover_test.avi"
-    #     cover = "test_files/secret_long.avi"
-    #     key = 1
+    def test_frame_size_verification(self):
+        print("\nTEST 6 - File Management (Incompatible Frame Sizes)")       
+        secret = "test_files/cover_test.avi"
+        cover = "test_files/secret_long.avi"
+        key = 1
         
-    #     setupTempDir()
-    #     cover_fps = videoToImages(cover, "cover")
-    #     videoToImages(secret, "secret")
+        setupTempDir()
+        cover_fps = videoToImages(cover, "cover")
+        videoToImages(secret, "secret")
         
-    #     with self.assertRaises(SystemExit) as exit:
-    #         stegoEncodeFrames(key)
+        with self.assertRaises(SystemExit) as exit:
+            stegoEncodeFrames(key)
         
-    #     print(self.assertEqual(exit.exception.args[0], "Frame sizes incompatable. Cover video must be 8 times the resolution of the secret video."))
+        print(self.assertEqual(exit.exception.args[0], "Frame sizes incompatable. Cover video must be 8 times the resolution of the secret video."))
         
     
 if __name__ == '__main__':

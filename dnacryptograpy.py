@@ -1,6 +1,4 @@
 from distutils.log import error
-from msilib.schema import Binary
-from operator import index
 from collections import deque
 from datetime import datetime
 
