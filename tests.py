@@ -10,7 +10,7 @@ import filecmp
 
 class Testing(unittest.TestCase):
     def test_cryptography(self):
-        print("\nTEST 1 - Cryptography")
+        print("\nTEST 1 - Cryptography (Encryption & Decryption)")
         image_path = "test_files/secret_test.bmp"
         key = 1
         
@@ -28,9 +28,27 @@ class Testing(unittest.TestCase):
         
         
         self.assertEqual(raw_data, plaintext)
+        
+    def test_cryptography_encryption(self):
+        print("\nTEST 2 - Cryptography (Encryption)")
+        image_path = "test_files/secret_test.bmp"
+        key = 1
+        
+        with open(image_path, "rb") as image:
+            secret_image_bytes = bytes(image.read())
+            image.close()
+            secret_image_name_bytes = str.encode(image_path)
+            payload = secret_image_name_bytes + secret_image_bytes
+            
+        final_payload = payload
+        raw_data = bin(int.from_bytes(final_payload, byteorder=sys.byteorder))[2:]
+        cipher = DNAencrypt(key, raw_data)
+        
+        self.assertNotEqual(raw_data, cipher) 
+
 
     def test_cryptography_mismatched_keys(self):
-        print("\nTEST 2 - Cryptography (Mismatched Keys)")
+        print("\nTEST 3 - Cryptography (Mismatched Keys)")
         image_path = "test_files/secret_test.bmp"
         key1 = 1
         key2 = 2
@@ -51,7 +69,7 @@ class Testing(unittest.TestCase):
         self.assertNotEqual(raw_data, plaintext)
         
     def test_steganography(self):
-        print("\nTEST 3 - Steganography")
+        print("\nTEST 4 - Steganography")
         cover = "test_files/cover_test.avi"
         secret = "test_files/secret_test.avi"
         key = 1
@@ -82,7 +100,7 @@ class Testing(unittest.TestCase):
 
 
     def test_file_extension_verification(self):
-        print("\nTEST 4 - File Management (Incompatible File Extension)")
+        print("\nTEST 5 - File Management (Incompatible File Extension)")
         incompatible_file = "test_files/secret_test.mp4"        
         setupTempDir()
         
@@ -92,7 +110,7 @@ class Testing(unittest.TestCase):
         print(self.assertEqual(exit.exception.args[0], "Incompatible video type. Must be .avi format."))
             
     def test_video_length_verification(self):
-        print("\nTEST 5 - File Management (Incompatible Video Lengths)")       
+        print("\nTEST 6 - File Management (Incompatible Video Lengths)")       
         cover = "test_files/cover_test.avi"
         secret = "test_files/secret_long.avi"
         key = 1
@@ -107,7 +125,7 @@ class Testing(unittest.TestCase):
         print(self.assertEqual(exit.exception.args[0], "Secret video is longer than cover video."))
         
     def test_frame_size_verification(self):
-        print("\nTEST 6 - File Management (Incompatible Frame Sizes)")       
+        print("\nTEST 7 - File Management (Incompatible Frame Sizes)")       
         secret = "test_files/cover_test.avi"
         cover = "test_files/secret_long.avi"
         key = 1

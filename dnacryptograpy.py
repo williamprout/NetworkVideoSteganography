@@ -22,16 +22,6 @@ def indexTable(key):
     else:
         return defaultTable
 
-# def DNAtoEncodedBinary(dna, table):
-#     i = 0
-#     output = ""
-#     while i < len(dna):
-#         dnasequence = dna[i:i+4]
-#         if len(dnasequence) == 4:
-#             output += '{0:08b}'.format(table.index(dnasequence))
-#         i += 4
-#     return output
-
 def encryption(binary, table):
     i = 0
     j = 0
@@ -63,7 +53,6 @@ def DNAencrypt(key, data):
         data = data[:(len(data)-(len(data)%8))] 
     start = datetime.now()
     encrypted = encryption(data, table)
-    # print("done binary to DNA "  + str(datetime.now() - start))
     encrypted = encrypted + overflow
     return encrypted
 
@@ -95,7 +84,6 @@ def dnaToBinary(binary):
     return output
 
 def DNAdecrypt(key, cipher):
-    
     table = indexTable(key)
     overflow = ""
     if len(cipher)%8 != 0:
@@ -103,8 +91,6 @@ def DNAdecrypt(key, cipher):
         cipher = cipher[:(len(cipher)-(len(cipher)%8))]
     start = datetime.now()
     dna = EncodedBinarytoDNA(cipher, table)
-    # print("done binary to DNA "  + str(datetime.now() - start))
     start2 = datetime.now()
     decrypted = dnaToBinary(dna) + overflow
-    # print("done dna to binary " + str(datetime.now() - start2))
     return decrypted

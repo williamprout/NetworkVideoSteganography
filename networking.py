@@ -15,8 +15,6 @@ import shutil
 
 BUFFER_SIZE = 2048
 
-
-
 def sendFile(filename, destination, port):
     filesize = os.path.getsize(filename)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -24,14 +22,14 @@ def sendFile(filename, destination, port):
     s.connect((destination, int(port)))
     
     file = open(filename, "rb")
-    data = file.read(BUFFER_SIZE)
+    data = file.read(1024)
     s.send(f"{filename}".encode())
     
     time.sleep(0.2)
     print("Starting file transmission...")
     while (data):
         s.send(data)
-        data = file.read(BUFFER_SIZE)
+        data = file.read(1024)
     
     print("Transmission complete.")
     
@@ -46,14 +44,14 @@ def receiveFile(port):
 
     connection, addr = s.accept()
     print("Received connection from", str(addr[0])+":"+str(addr[1]))
-    filename = connection.recv(BUFFER_SIZE).decode()
+    filename = connection.recv(1024).decode()
     
     with open(filename, "wb") as file:
         while True:
-            data = connection.recv(BUFFER_SIZE)
+            data = connection.recv(1024)
             while (data):
                 file.write(data)
-                data = connection.recv(BUFFER_SIZE)
+                data = connection.recv(1024)
             if not data:
                 file.close()
                 break
@@ -74,8 +72,6 @@ def streamTransmit(destination, port, key):
     s.send(str(len(secretFrames)).encode())
     
     secret_pixel_count, cover_pixel_count = main.framesCompatabilityCheck(secretFrames, coverFrames)
-    
-    # del secretFrames[::2]
 
     if ((cover_pixel_count / secret_pixel_count) > 8.2):
         print("File compatability check complete!")
@@ -95,14 +91,12 @@ def streamTransmit(destination, port, key):
             if i % blockSize == 0:
                 last_sent = i 
                 for x in range(i-blockSize, i):
-                    # print(x)
                     xstring = str(x).zfill(10)
                     secret_frame = "%s.bmp" % xstring
         
                     file = open("temp/encoded/%s" % secret_frame, "rb")
                     data = file.read(BUFFER_SIZE)
 
-                    # print("Sending Frame", secret_frame)
                     while (data):
                         s.send(data)
                         data = file.read(BUFFER_SIZE)
@@ -110,13 +104,10 @@ def streamTransmit(destination, port, key):
                     print("Encoded: %i/%i Sent: %i/%i ACKs: %i/%i" % (i, len(secretFrames), sentCount, len(secretFrames), ackCount, len(secretFrames)), end='\r')
                     time.sleep(0.3)
                     s.send(b"<end_file>")
-                    # print("sent end file flag") 
-                    
-                    # print("waiting for ack")
+
                     ack = s.recv(BUFFER_SIZE)
                     while True:
                         if ack.decode() == xstring:
-                            # print("correct ACK")
                             break 
                         else:
                             print("incorrect ACK")
@@ -125,14 +116,12 @@ def streamTransmit(destination, port, key):
                     print("Encoded: %i/%i Sent: %i/%i ACKs: %i/%i" % (i, len(secretFrames), sentCount, len(secretFrames), ackCount, len(secretFrames)), end='\r')
             elif i == len(secretFrames):
                 for x in range(last_sent, i):
-                    # print(x)
                     xstring = str(x).zfill(10)
                     secret_frame = "%s.bmp" % xstring
         
                     file = open("temp/encoded/%s" % secret_frame, "rb")
                     data = file.read(BUFFER_SIZE)
 
-                    # print("Sending Frame", secret_frame)
                     while (data):
                         s.send(data)
                         data = file.read(BUFFER_SIZE)
@@ -140,12 +129,10 @@ def streamTransmit(destination, port, key):
                     print("Encoded: %i/%i Sent: %i/%i ACKs: %i/%i" % (i, len(secretFrames), sentCount, len(secretFrames), ackCount, len(secretFrames)), end='\r')
                     time.sleep(0.3)
                     s.send(b"<end_file>")
-                    # print("sent end file flag") 
-                    # print("waiting for ack")
+
                     ack = s.recv(BUFFER_SIZE)
                     while True:
                         if ack.decode() == xstring:
-                            # print("correct ACK")
                             break 
                         else:
                             print("incorrect ACK")
@@ -189,9 +176,6 @@ def receivingProcess(c, port):
                 if data == b"<end_file>":
                     file_complete = True
                     file.close()
-                    # print("saved: %s.bmp" % countString)
-                    # time.sleep(0.1)
-                    # print("sending ACK", countString)
                     connection.send(countString.encode())
                 elif data == b"<end>":
                     break
@@ -199,22 +183,17 @@ def receivingProcess(c, port):
                     file.write(data)
         if data == b"<end>":
             os.remove("temp/encoded/%s.bmp" % countString)
-            # time.sleep(0.1)
-            # print("sending endACK")
             connection.send(b"endACK")
             complete = True
             global endTransmission
             endTransmission = True
         count += 1
-    # print("Transmission Complete")
     connection.close()
     
 def diplayVideoProcess(c):
-    # print("STARTED DISPLAY VIDEO PROCESS")
     waiting = True
     frame = 0
     totalFrames = 0
-    # print("Waiting for a buffer of available frames...")
     while waiting:
         secretFrames = [img for img in os.listdir('temp/secret') if img.endswith(".bmp")]
         encodedFrames = [img for img in os.listdir('temp/encoded') if img.endswith(".bmp")]
@@ -229,7 +208,6 @@ def diplayVideoProcess(c):
     print("\nSTARTING VIDEO DISPLAY")
 
     root = Tk()
-    # image_data = ImageTk.PhotoImage(image = Image.open("temp/secret/%s/" % image_data[frame]))
     secretFrames = [img for img in os.listdir('temp/secret') if img.endswith(".bmp")]
     image = ImageTk.PhotoImage(image = Image.open("temp/secret/%s" % secretFrames[frame]))
     root.title("Video")
@@ -249,7 +227,6 @@ def diplayVideoProcess(c):
                 shutil.rmtree("temp/")
                 print("Received: %i/%i Decoded: %i/%i Displayed %i/%i" % (len(encodedFrames), totalFrames, len(secretFrames), totalFrames, frame+1, totalFrames), end='\r')
                 root.quit()
-            # print("showing frame", frame)
             print("Received: %i/%i Decoded: %i/%i Displayed %i/%i" % (len(encodedFrames), totalFrames, len(secretFrames), totalFrames, frame+1, totalFrames), end='\r')
             root.after(frame_delay, playVideo, frame+1)
         except IndexError:
@@ -281,7 +258,6 @@ def streamReceive(port, key):
         last_file_count = file_count
         file_count = len(files)
         if file_count >= i + 10:
-            # print("decoding:", i)
             for name in range(i,i+10):
                 nameString = str(name).zfill(10)
                 encodedFrames.append("%s.bmp" % nameString)
@@ -290,10 +266,8 @@ def streamReceive(port, key):
                 time.sleep(0.2)
             i += 10
         elif file_count == i and i != 0:
-            # print("breaking decoding, filecount and i are equal")
             break
         elif last_file_count == file_count and file_count > i and i != 0:
-            # print("final decoding:", i)
             for name in range(i,file_count):
                 nameString = str(name).zfill(10)
                 encodedFrames.append("%s.bmp" % nameString)
@@ -304,4 +278,3 @@ def streamReceive(port, key):
     dvp.join()
     
     print("\nVideo stream diplay complete")
-    

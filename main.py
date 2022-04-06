@@ -18,7 +18,6 @@ def videoToImages(videoFile, type):
         fps = vidcap.get(cv2.CAP_PROP_FPS)
         success, image = vidcap.read()
         count = 0
-        # shutil.rmtree("temp/" + type)
         os.mkdir("temp/"+ type)
 
         while success:
@@ -26,9 +25,7 @@ def videoToImages(videoFile, type):
             # save frame as JPEG file
             cv2.imwrite("temp/" + type + "/%s.bmp" % countString, image)
             success, image = vidcap.read()
-            # print('Read a new frame: ', success)
             count += 1
-        # print("Video-to-Image conversion took: " + str(datetime.now() - start))
         return fps
     else:
         cleanupTempFiles()
@@ -38,7 +35,6 @@ def imagesToVideo(video_name, type, fps):
     fourcc = cv2.VideoWriter_fourcc(*'FFV1')
 
     image_folder = 'temp/' + type
-    # video_name = 'output.avi'
 
     images = [img for img in os.listdir(image_folder) if img.endswith(".bmp")]
     frame = cv2.imread(os.path.join(image_folder, images[0]))
@@ -48,7 +44,6 @@ def imagesToVideo(video_name, type, fps):
 
 
     for image in images:
-        # print(image)
         video.write(cv2.imread(os.path.join(image_folder, image)))
 
     cv2.destroyAllWindows()
@@ -60,7 +55,6 @@ def encodeFrame(secretFrame, key):
 
     # Writing to output image
     stegoEncode(cipher, "temp/cover/" + secretFrame, "temp/encoded/%s" % secretFrame)
-    # print(secretFrame)
 
 def framesCompatabilityCheck(secretFrames, coverFrames):
     if len(secretFrames) > len(coverFrames):
@@ -84,9 +78,6 @@ def framesCompatabilityCheck(secretFrames, coverFrames):
     return secret_pixel_count, cover_pixel_count
 
 def stegoEncodeFrames(key):
-    
-    # shutil.rmtree("temp/encoded")
-    
     secretFrames = [img for img in os.listdir('temp/secret') if img.endswith(".bmp")]
     coverFrames = [img for img in os.listdir('temp/cover') if img.endswith(".bmp")]
     
@@ -94,17 +85,11 @@ def stegoEncodeFrames(key):
 
     if ((cover_pixel_count / secret_pixel_count) > 8.2):
         if (len(secretFrames) <= len(coverFrames)):
-            # print("Frame sizes compatible, cover frame is", str(
-                # cover_pixel_count / secret_pixel_count), 'times larger than the secret frame.')
             print("File compatability check complete!")
             
             os.mkdir("temp/encoded")
-
-            # frameNumber = 0
+            
             threads = []
-            # for secretFrame in secretFrames:
-            # secretFrameString = str(secretFrame)
-            # print(secretFrameString)
             
             print("Frame Encoding Progress:")
             
@@ -112,11 +97,6 @@ def stegoEncodeFrames(key):
             for _ in tqdm.tqdm(pool.imap(partial(encodeFrame, key=key), secretFrames), total=len(secretFrames)):
                 pass
                 
-            #     threads.append(threading.Thread(target=encodeFrame(secretFrameString)))
-            #     threads[-1].start()
-                
-            # for t in threads:
-            #     t.join()
         else:
             cleanupTempFiles()
             sys.exit("Video lengths incompatable. Cover video must be longer than the secret video.")
@@ -130,7 +110,7 @@ def decodeFrame(encodedFrame, key):
     cipher = stegoDecode("temp/encoded/%s" % encodedFrame)
     
     decryptSecretImage(cipher, key)
-
+    
 
 def stegoDecodeFrames(key):
 
@@ -183,54 +163,25 @@ def main():
         cleanupTempFiles()
         
     if (mode == "clean"):
+        #py main.py clean
         cleanupTempFiles()
         
-    # if (mode == "dnatest"):
-    #     with open("encrypttest.bmp", "rb") as image:
-    #         #Read image data in binary
-    #         # print("Reading secret image...")
-    #         secret_image_bytes = bytes(image.read())
-    #         image.close()
-    #         secret_image_name_bytes = str.encode("encrypttest.bmp")
-    #         payload = secret_image_name_bytes + secret_image_bytes
-            
-    #     final_payload = payload
-    #     final_final_payload = bin(int.from_bytes(final_payload, byteorder=sys.byteorder))[2:]
-    #     print(final_final_payload[0:50])
-    #     cipher = DNAencrypt(1, final_final_payload)
-    #     # print(cipher[0:50])
-    #     decrypted = DNAdecrypt(1, cipher)
-    #     # print(decrypted[0:50])
-    #     # print(final_final_payload[-50:])
-    #     # print(decrypted[-50:])
-        
-    #     # print(len(final_final_payload))
-    #     # print(len(cipher))
-    #     # print(len(decrypted))
-    #     if final_final_payload == decrypted:
-    #         print("SUCCESSFUL")
-            
-    #     decrypted_raw = int(decrypted, 2)
-        
-    #     if final_payload == decrypted_raw:
-    #         print("SUCCESSFUL2")
-        
-    #     # filename = (decrypted[0:(decrypted.rfind(bytes('.bmp', 'utf-8')) + 4)]).decode('utf-8')
-    #     # plaintext = decrypted[(decrypted.rfind(bytes('.bmp', 'utf-8')) + 4):]
-    #     # print(filename)
-    #     # print(plaintext)
-        
     if (mode == "receive"):
+        #py main.py receive <destination port>
         port = sys.argv[2]
+        
         networking.receiveFile(port)
 
     if (mode == "send"):
+        #py main.py send <file> <destination ip address> <destination port>
         file = sys.argv[2]
         address = sys.argv[3]
         port = sys.argv[4]
+        
         networking.sendFile(file, address, port)
         
     if (mode == "transmit_stream"):
+        #py main.py transmit_stream <secret video> <cover video> <destination ip address> <destination port> <encryption key>
         secret = sys.argv[2]
         cover = sys.argv[3]
         address = sys.argv[4]
@@ -241,17 +192,13 @@ def main():
         cover_fps = videoToImages(cover, "cover")
         videoToImages(secret, "secret")
         networking.streamTransmit(address, port, key)
-        
-        
-        
-        
-        
         cleanupTempFiles()
         
-        
     if (mode == "receive_stream"):
+        #py main.py receive_stream <destination port> <encryption key>
         port = sys.argv[2]
         key = int(sys.argv[3])
+        
         networking.streamReceive(port, key)
 
         
